@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cyber World Scanner</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%);
+            color: #00ff00;
+            font-family: 'Courier New', monospace;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+        }
+
+        .container {
+            display: flex;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Map Section */
+        .map-section {
+            flex: 2;
+            position: relative;
+            background: rgba(0, 0, 0, 0.7);
+            border-right: 2px solid #00ff00;
+            overflow: hidden;
+        }
+
+        .map-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .world-map {
+            width: 90%;
+            height: 90%;
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 500"><path d="M100,100 L200,150 L300,100 L400,200 L500,150 L600,200 L700,100" stroke="%2300ff00" fill="none" stroke-width="2"/></svg>') center/contain no-repeat;
+            position: relative;
+        }
+
+        /* Scanning Effects */
+        .scan-circle {
+            position: absolute;
+            border: 2px solid #00ff00;
+            border-radius: 50%;
+            opacity: 0;
+            animation: scan-pulse 4s infinite;
+        }
+
+        .scan-ray {
+            position: absolute;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #00ff00, transparent);
+            transform-origin: left center;
+            animation: scan-ray 3s infinite;
+        }
+
+        .scan-ping {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: #ff00ff;
+            border-radius: 50%;
+            animation: ping 2s infinite;
+        }
+
+        .target-marker {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: #ff0000;
+            border-radius: 50%;
+            animation: blink 1s infinite;
+        }
+
+        /* Scan Report Panel */
+        .report-section {
+            flex: 1;
+            background: rgba(0, 0, 0, 0.9);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            border-left: 2px solid #00ff00;
+        }
+
+        .report-header {
+            margin-bottom: 20px;
+            text-align: center;
+            border-bottom: 1px solid #00ff00;
+            padding-bottom: 10px;
+        }
+
+        .report-content {
+            flex: 1;
+            overflow-y: auto;
+            background: rgba(0, 20, 0, 0.5);
+            border: 1px solid #00ff00;
+            padding: 15px;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        .report-entry {
+            margin-bottom: 15px;
+            padding: 10px;
+            background: rgba(0, 40, 0, 0.7);
+            border-left: 3px solid #00ff00;
+            animation: slide-in 0.5s ease-out;
+        }
+
+        .report-time {
+            color: #00ffff;
+            font-size: 12px;
+            margin-bottom: 5px;
+        }
+
+        .report-status {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 3px;
+            margin-right: 10px;
+            font-weight: bold;
+        }
+
+        .status-success {
+            background: rgba(0, 255, 0, 0.2);
+            color: #00ff00;
+        }
+
+        .status-warning {
+            background: rgba(255, 255, 0, 0.2);
+            color: #ffff00;
+        }
+
+        .status-danger {
+            background: rgba(255, 0, 0, 0.2);
+            color: #ff0000;
+        }
+
+        .control-panel {
+            margin-top: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .scan-button {
+            background: linear-gradient(45deg, #00ff00, #008800);
+            border: none;
+            color: #000;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.5);
+            transition: all 0.3s ease;
+        }
+
+        .scan-button:hover {
+            box-shadow: 0 0 25px rgba(0, 255, 0, 0.8);
+            transform: scale(1.05);
+        }
+
+        .scan-button:active {
+            transform: scale(0.98);
+        }
+
+        /* Animations */
+        @keyframes scan-pulse {
+            0% {
+                width: 0;
+                height: 0;
+                opacity: 1;
+            }
+            70% {
+                opacity: 0.7;
+            }
+            100% {
+                width: 200px;
+                height: 200px;
+                opacity: 0;
+            }
+        }
+
+        @keyframes scan-ray {
+            0% {
+                width: 0;
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 1;
+            }
+            100% {
+                width: 300px;
+                opacity: 0;
+            }
+        }
+
+        @keyframes ping {
+            0% {
+                transform: scale(0);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(5);
+                opacity: 0;
+            }
+        }
+
+        @keyframes blink {
+            0%, 50%, 100% {
+                opacity: 1;
+            }
+            25%, 75% {
+                opacity: 0.3;
+            }
+        }
+
+        @keyframes slide-in {
+            from {
+                transform: translateX(50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .matrix-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+            opacity: 0.3;
+        }
+
+        .scan-progress {
+            height: 4px;
+            background: linear-gradient(90deg, transparent, #00ff00, #00ffff);
+            width: 0%;
+            transition: width 0.5s ease;
+            margin-top: 10px;
+            border-radius: 2px;
+        }
+
+        .scan-info {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+            font-size: 12px;
+            color: #00ffff;
+        }
+    </style>
+</head>
+<body>
+    <div class="matrix-bg" id="matrix"></div>
+    
+    <div class="container">
+        <!-- Map Section -->
+        <div class="map-section">
+            <div class="map-container">
+                <div class="world-map" id="worldMap">
+                    <!-- Scanning effects will be added dynamically -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Report Section -->
+        <div class="report-section">
+            <div class="report-header">
+                <h2>GLOBAL SECURITY SCAN</h2>
+                <div class="scan-progress" id="scanProgress"></div>
+                <div class="scan-info">
+                    <span id="scanStatus">STANDBY</span>
+                    <span id="scanTime">00:00:00</span>
+                </div>
+            </div>
+
+            <div class="report-content" id="reportContent">
+                <!-- Scan reports will be added dynamically -->
+                <div class="report-entry">
+                    <div class="report-time">SYSTEM READY</div>
+                    <p>Global security monitoring system initialized.</p>
+                    <p>Waiting for scan command...</p>
+                </div>
+            </div>
+
+            <div class="control-panel">
+                <button class="scan-button" id="scanButton">START SCAN</button>
+                <div>
+                    <span id="targetCount">Targets: 0</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Matrix background effect
+        function createMatrixEffect() {
+            const canvas = document.createElement('canvas');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            document.getElementById('matrix').appendChild(canvas);
+            
+            const ctx = canvas.getContext('2d');
+            const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789$#@%&*(){}[]<>~';
+            const fontSize = 14;
+            const columns = Math.floor(canvas.width / fontSize);
+            
+            const drops = [];
+            for (let i = 0; i < columns; i++) {
+                drops[i] = Math.floor(Math.random() * canvas.height / fontSize);
+            }
+            
+            function drawMatrix() {
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                ctx.fillStyle = '#00ff00';
+                ctx.font = `${fontSize}px monospace`;
+                
+                for (let i = 0; i < drops.length; i++) {
+                    const text = characters.charAt(Math.floor(Math.random() * characters.length));
+                    ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+                    
+                    if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+                        drops[i] = 0;
+                    }
+                    
+                    drops[i]++;
+                }
+            }
+            
+            setInterval(drawMatrix, 50);
+        }
+
+        // World map scanning system
+        class WorldScanner {
+            constructor() {
+                this.worldMap = document.getElementById('worldMap');
+                this.reportContent = document.getElementById('reportContent');
+                this.scanButton = document.getElementById('scanButton');
+                this.scanProgress = document.getElementById('scanProgress');
+                this.scanStatus = document.getElementById('scanStatus');
+                this.scanTime = document.getElementById('scanTime');
+                this.targetCount = document.getElementById('targetCount');
+                
+                this.isScanning = false;
+                this.targets = [
+                    { x: 25, y: 30, name: 'North America', type: 'region' },
+                    { x: 48, y: 35, name: 'Europe', type: 'region' },
+                    { x: 75, y: 40, name: 'Asia', type: 'region' },
+                    { x: 60, y: 70, name: 'Australia', type: 'region' },
+                    { x: 30, y: 50, name: 'Network Hub 1', type: 'facility' },
+                    { x: 55, y: 45, name: 'Network Hub 2', type: 'facility' },
+                    { x: 70, y: 30, name: 'Data Center Alpha', type: 'facility' },
+                    { x: 40, y: 65, name: 'Data Center Beta', type: 'facility' }
+                ];
+                
+                this.currentTarget = 0;
+                this.scanStartTime = null;
+                
+                this.init();
+            }
+            
+            init() {
+                this.scanButton.addEventListener('click', () => this.toggleScan());
+                createMatrixEffect();
+            }
+            
+            toggleScan() {
+                if (this.isScanning) {
+                    this.stopScan();
+                } else {
+                    this.startScan();
+                }
+            }
+            
+            startScan() {
+                this.isScanning = true;
+                this.scanButton.textContent = 'STOP SCAN';
+                this.scanStatus.textContent = 'SCANNING';
+                this.scanStartTime = Date.now();
+                this.currentTarget = 0;
+                this.addReport('SCAN INITIATED', 'Security scan started. Monitoring global network infrastructure.', 'success');
+                
+                this.startTargetScan();
+                this.updateTimer();
+            }
+            
+            stopScan() {
+                this.isScanning = false;
+                this.scanButton.textContent = 'START SCAN';
+                this.scanStatus.textContent = 'STANDBY';
+                this.addReport('SCAN TERMINATED', 'Global security scan has been manually stopped.', 'warning');
+            }
+            
+            startTargetScan() {
+                if (!this.isScanning || this.currentTarget >= this.targets.length) {
+                    if (this.isScanning) {
+                        this.addReport('SCAN COMPLETE', 'All targets have been scanned successfully.', 'success');
+                        this.stopScan();
+                    }
+                    return;
+                }
+                
+                const target = this.targets[this.currentTarget];
+                this.addReport('TARGET ACQUIRED', `Scanning ${target.name} (${target.type})`, 'warning');
+                
+                // Create scanning effects
+                this.createScanEffects(target);
+                
+                // Simulate scan duration
+                setTimeout(() => {
+                    this.generateScanReport(target);
+                    this.currentTarget++;
+                    this.updateProgress();
+                    this.startTargetScan();
+                }, 2000 + Math.random() * 2000);
+            }
+            
+            createScanEffects(target) {
+                // Create scan circle
+                const scanCircle = document.createElement('div');
+                scanCircle.className = 'scan-circle';
+                scanCircle.style.left = `${target.x}%`;
+                scanCircle.style.top = `${target.y}%`;
+                this.worldMap.appendChild(scanCircle);
+                
+                // Create scan ray
+                const scanRay = document.createElement('div');
+                scanRay.className = 'scan-ray';
+                scanRay.style.left = `${target.x}%`;
+                scanRay.style.top = `${target.y}%`;
+                scanRay.style.transform = `rotate(${Math.random() * 360}deg)`;
+                this.worldMap.appendChild(scanRay);
+                
+                // Create ping effect
+                const ping = document.createElement('div');
+                ping.className = 'scan-ping';
+                ping.style.left = `${target.x}%`;
+                ping.style.top = `${target.y}%`;
+                this.worldMap.appendChild(ping);
+                
+                // Create target marker
+                const marker = document.createElement('div');
+                marker.className = 'target-marker';
+                marker.style.left = `${target.x}%`;
+                marker.style.top = `${target.y}%`;
+                this.worldMap.appendChild(marker);
+                
+                // Remove effects after animation
+                setTimeout(() => {
+                    scanCircle.remove();
+                    scanRay.remove();
+                    ping.remove();
+                }, 3000);
+            }
+            
+            generateScanReport(target) {
+                const statusTypes = ['success', 'warning', 'danger'];
+                const statusTexts = ['SECURE', 'VULNERABLE', 'CRITICAL'];
+                const randomStatus = Math.floor(Math.random() * 10);
+                let status;
+                
+                if (randomStatus < 6) status = statusTypes[0];
+                else if (randomStatus < 9) status = statusTypes[1];
+                else status = statusTypes[2];
+                
+                const findings = [
+                    'No vulnerabilities detected',
+                    'Firewall rules updated',
+                    'Potential access point identified',
+                    'Encrypted connection established',
+                    'Security protocols active',
+                    'Unusual activity detected',
+                    'System compromised',
+                    'Data breach risk',
+                    'Encryption bypassed',
+                    'Access granted'
+                ];
+                
+                const finding = findings[Math.floor(Math.random() * findings.length)];
+                
+                this.addReport(
+                    `${target.name} SCAN COMPLETE`,
+                    `Status: ${statusTexts[statusTypes.indexOf(status)]}<br>
+                    Finding: ${finding}<br>
+                    Location: ${target.x.toFixed(1)}°, ${target.y.toFixed(1)}°`,
+                    status
+                );
+            }
+            
+            addReport(title, message, status) {
+                const entry = document.createElement('div');
+                entry.className = 'report-entry';
+                
+                const time = new Date().toLocaleTimeString();
+                const statusClass = `status-${status}`;
+                
+                entry.innerHTML = `
+                    <div class="report-time">${time}</div>
+                    <h3><span class="report-status ${statusClass}">${status.toUpperCase()}</span> ${title}</h3>
+                    <p>${message}</p>
+                `;
+                
+                this.reportContent.appendChild(entry);
+                this.reportContent.scrollTop = this.reportContent.scrollHeight;
+            }
+            
+            updateProgress() {
+                const progress = ((this.currentTarget) / this.targets.length) * 100;
+                this.scanProgress.style.width = `${progress}%`;
+                this.targetCount.textContent = `Targets: ${this.currentTarget}/${this.targets.length}`;
+            }
+            
+            updateTimer() {
+                if (!this.isScanning) return;
+                
+                const elapsed = Math.floor((Date.now() - this.scanStartTime) / 1000);
+                const hours = Math.floor(elapsed / 3600).toString().padStart(2, '0');
+                const minutes = Math.floor((elapsed % 3600) / 60).toString().padStart(2, '0');
+                const seconds = (elapsed % 60).toString().padStart(2, '0');
+                
+                this.scanTime.textContent = `${hours}:${minutes}:${seconds}`;
+                requestAnimationFrame(() => this.updateTimer());
+            }
+        }
+
+        // Initialize the scanner when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            new WorldScanner();
+        });
+    </script>
+</body>
+</html>
